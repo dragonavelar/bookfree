@@ -5,6 +5,11 @@ from app import app, db
 from app.models.forms import SearchBook, NewBookForm
 from app.models.tables import Book, UserBook
 
+import flask_sqlalchemy
+literal_column = flask_sqlalchemy.sqlalchemy.sql.expression.literal_column
+literal = flask_sqlalchemy.sqlalchemy.sql.expression.literal
+
+
 # Função que recebe um gerador e aplica o or no valores do gerador.
 def or_(gen):
 	# Pega o primeiro valor
@@ -63,9 +68,13 @@ def my_shelves(id):
             OR book.gender = :gender_2
             OR book.gender = ...)
         """
-        qry = db.session.query( UserBook.id.label("id"), UserBook.owner_id, Book.title.label("title"), Book.author.label('author') ).join(Book).filter( (UserBook.owner_id==id) & or_( ( Book.gender==genre for genre in filters ) ) )
+        qry = db.session.query( UserBook.id.label("id"), UserBook.owner_id, Book.title.label("title"), Book.author.label('author'), (literal('http://covers.openlibrary.org/b/isbn/')+Book.isbn+literal('-L.jpg')).label('imglink') ).join(Book).filter( (UserBook.owner_id==id) & or_( ( Book.gender==genre for genre in filters ) ) )
         # Realiza a query
         my_books = qry.all()
+        # Adiciona os links para a imagem e para o livro
+        for register in my_books:
+            break
+            register['booklink'] = '/books/{}'.format(register['owner_id'])
         # Diz que já foi escolhida alguma estante
         shelf = True
     return render_template('books/shelf.html',shelf=shelf,my_books=my_books,my_shelves=my_shelves)
